@@ -6,18 +6,41 @@ const clearBtn = document.querySelector('.clear-tasks');
 const filter = document.querySelector('#filter');
 
 
-// Init event listeners
+// Load event listeners
 loadEventListeners();
 
-function loadEventListeners(){
+function loadEventListeners() {
+	document.addEventListener('DOMContentLoaded', getTasks);
 	form.addEventListener('submit', addTask);
+	taskList.addEventListener('click', removeTask);
+	clearBtn.addEventListener('click', clearTasks);
+	filter.addEventListener('keyup', filterTasks)
 }
 
+// Load tasks form local storage 
+function getTasks() {
+	let tasks =	checkStorage();
+
+	tasks.forEach(task => {
+	const li = document.createElement('li');
+	li.className = 'collection-item';
+	li.appendChild(document.createTextNode(task));
+
+	const link = document.createElement('a');
+	link.className = 'delete-item secondary-content';
+	link.innerHTML = '<i class="fa fa-remove"></i>';
+
+	li.appendChild(link);
+
+	taskList.appendChild(li);
+	});
+}
+
+// Add task
 function addTask(e) {
 	if(taskInput.value === ''){
 		alert('Add a task');
-	} 
-
+	} else {
 	const li = document.createElement('li');
 	li.className = 'collection-item';
 	li.appendChild(document.createTextNode(taskInput.value));
@@ -28,7 +51,84 @@ function addTask(e) {
 
 	li.appendChild(link);
 
-
 	taskList.appendChild(li);
+
+	// Local storage call
+	storeTask(taskInput.value);
+
+	// Clear field
+	taskInput.value = '';
 	e.preventDefault();
+	}
+}
+
+// Add to local storage
+function storeTask(task) {
+	let tasks =	checkStorage();
+
+	tasks.push(task);
+
+	localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+// Remove task
+function removeTask(e) {
+	if(e.target.parentElement.classList.contains('delete-item')){
+		e.target.parentElement.parentElement.remove();
+
+		// Remove from LS
+		removeLocal(e.target.parentElement.parentElement);
+	}
+}
+
+// Remove from LS
+function removeLocal(taskItem) {
+	let tasks = checkStorage();
+	tasks.forEach((task, index) => {
+		if(taskItem.textContent === task) {
+			tasks.splice(index, 1);
+		}
+	});
+
+	localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+// Clear tasks
+function clearTasks() {
+	if(confirm('Are you sure?')) {
+		while(taskList.firstChild) {
+			taskList.removeChild(taskList.firstChild);
+		}
+	}
+	clearLocal();
+}
+
+// Clear LS
+function clearLocal() {
+	localStorage.clear();
+}
+
+// Filter tasks 
+function filterTasks(e) {
+	const text = e.target.value.toLowerCase();
+
+	document.querySelectorAll('.collection-item').forEach(task => {
+		const item = task.firstChild.textContent;
+		if(item.toLowerCase().indexOf(text) != -1) {
+			task.style.display = 'block'
+		} else {
+			task.style.display = 'none';
+		}
+	});
+}
+
+// Check for tasks in local storage
+function checkStorage() {
+	let tasks;
+	if(localStorage.getItem('tasks') === null) {
+		tasks = [];
+	} else {
+		tasks = JSON.parse(localStorage.getItem('tasks'));
+	}
+	return tasks;
 }
